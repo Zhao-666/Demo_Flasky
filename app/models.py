@@ -144,6 +144,10 @@ class User(UserMixin, db.Model):
         return self.followers.filter_by(follower_id=user.id).first() is not None
 
     @property
+    def followed_posts(self):
+        return Post.query.join(Follow,Follow.followed_id == Post.author_id).filter(Follow.follower_id == self.id)
+
+    @property
     def password(self):
         raise AttributeError("password is not a readable attribute")
 
@@ -156,8 +160,6 @@ class User(UserMixin, db.Model):
         if self.role is None:
             if self.email == current_app.config["FLASKY_ADMIN"]:
                 self.role = Role.query.filter_by(permissions=0xff).first()
-            if self.email == "495215018@qq.com":
-                self.role = Role.query.filter_by(permissions=0x0f).first()
             if self.role is None:
                 self.role = Role.query.filter_by(default=True).first()
         if self.email is not None and self.avatar_hash is None:
