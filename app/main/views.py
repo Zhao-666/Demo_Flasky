@@ -120,8 +120,8 @@ def followed_by(username):
                                         error_out=False)
     follows = [{"user": item.followed, "timestamp": item.timestamp}
                for item in pagination.items]
-    return render_template("followers.html", user=user, title="Followed of", endpoint="main.followed_by",
-                           pagination=pagination, followed=follows)
+    return render_template("followers.html", user=user, title="Followed by ", endpoint="main.followed_by",
+                           pagination=pagination, follows=follows)
 
 
 @main.route("/followers/<username>")
@@ -135,7 +135,7 @@ def followers(username):
                                          error_out=False)
     follows = [{"user": item.follower, "timestamp": item.timestamp}
                for item in pagination.items]
-    return render_template("followers.html", user=user, title="Followers of", endpoint="main.followers",
+    return render_template("followers.html", user=user, title="Followers of ", endpoint="main.followers",
                            pagination=pagination, follows=follows)
 
 
