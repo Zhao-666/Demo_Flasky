@@ -15,6 +15,11 @@ class PostForm(FlaskForm):
     submit = SubmitField("Submit")
 
 
+class CommentForm(FlaskForm):
+    body = StringField("Enter your comment", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+
 class EditProfileForm(FlaskForm):
     name = StringField("Real name", validators=[Length(0, 64)])
     location = StringField("Location", validators=[Length(0, 64)])
