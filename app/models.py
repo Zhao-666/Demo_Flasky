@@ -5,9 +5,10 @@ from flask import current_app
 from datetime import datetime
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 import hashlib
-from flask import request
+from flask import request, url_for
 from markdown import markdown
 import bleach
+from app.exceptions import ValidationError
 
 
 class Permission:
@@ -54,6 +55,25 @@ class Post(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     body_html = db.Column(db.Text)
     comments = db.relationship("Comment", backref="post", lazy="dynamic")
+
+    @staticmethod
+    def from_json(json_post):
+        body = json_post.get("body")
+        if body is None or body == "":
+            raise ValidationError("post dose not have a body")
+        return Post(body=body)
+
+    def to_json(self):
+        json_post = {
+            "url": url_for("api.get_post", id=self.id, _external=True),
+            "body": self.body,
+            "body_html": self.body_html,
+            "timestamp": self.timestamp,
+            "author": url_for("api.get_user", id=self.author_id, _external=True),
+            "comments": url_for("api.get_post_comments", id=self.id, _external=True),
+            "comment_count": self.comments.count()
+        }
+        return json_post
 
     @staticmethod
     def generate_fake(count=100):
@@ -260,6 +280,32 @@ class User(UserMixin, db.Model):
         if data.get("email") != self.email:
             return False
         return True
+
+    def generate_auth_token(self, expiration):
+        s = Serializer(current_app.config["SECREY_KEY"],
+                       expires_in=expiration)
+        return s.dumps({id: self.id})
+
+    def to_json(self):
+        json_user = {
+            "url": url_for("api.get_user", id=self.id, _external=True),
+            "username": self.username,
+            "member_since": self.member_since,
+            "last_seen": self.last_seen,
+            "posts": url_for("api.get_post", id=self.id, _external=True),
+            "followed_posts": url_for("api.get_user_followed_posts", id=self.id, _external=True),
+            "post_count": self.posts.count()
+        }
+        return json_user
+
+    @staticmethod
+    def veridy_auth_token(token):
+        s = Serializer(current_app.config["SECREY_KEY"])
+        try:
+            data = s.loads(token)
+        except:
+            return None
+        return User.query.get(data["id"])
 
     @staticmethod
     def generate_fake(count=100):
